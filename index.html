@@ -296,6 +296,9 @@
         break;
       case 'pet':
         cowHappiness += 10;
+        if(cowHappiness > 100){
+          activateSecretMode();
+        }
         addOutput('You pet the cow. It seems to enjoy it!');
         moveCow('up');
         break;
@@ -472,11 +475,10 @@
       cowHappiness = Math.min(100, cowHappiness + 5);
     }
   
-    if (tapCount > 100) {
+    if (tapCount > 10) {
       cowHappiness = Math.min(100, cowHappiness + 5);
       activateSecretMode();
     }
-    shake(cow);
     displayStatus();
   });
   
