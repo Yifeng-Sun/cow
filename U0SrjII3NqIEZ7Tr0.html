@@ -1,0 +1,505 @@
+<!-- this is an AI assisted project running by yifengsun.com -->
+<!-- follow me on instagram -->
+<html><head><base href="https://cmd-sim.example.com/">
+<title>Yifeng's Backyard</title>
+<style>
+  body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: monospace;
+    background-color: #000;
+    color: #0f0;
+  }
+  #terminal {
+    height: 100%;
+    overflow-y: auto;
+    padding: 10px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+  }
+  #output-container {
+    flex-grow: 1;
+    overflow-y: auto;
+  }
+  #input-line {
+    display: flex;
+    align-items: center;
+  }
+  #prompt {
+    margin-right: 5px;
+  }
+  #command-input {
+    flex-grow: 1;
+    background: transparent;
+    border: none;
+    color: #0f0;
+    font-family: inherit;
+    font-size: inherit;
+    outline: none;
+  }
+  .output {
+    white-space: pre-wrap;
+    margin-bottom: 10px;
+  }
+  .ascii-art {
+    font-family: monospace;
+    white-space: pre;
+    line-height: 1;
+    color: #4af;
+    user-select: none;
+    cursor: pointer;
+  }
+  #cow-container {
+    position: relative;
+    width: 100%;
+    height: 300px;
+    overflow: hidden;
+  }
+  #cow {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    transition: all 0.5s ease;
+  }
+  .raindrop {
+    position: absolute;
+    color: #4af;
+    font-size: 20px;
+    animation: fall linear infinite;
+  }
+  @keyframes fall {
+    to {
+      transform: translateY(300px);
+    }
+  }
+  @keyframes rainbow {
+    0% { color: red; }
+    14% { color: orange; }
+    28% { color: yellow; }
+    42% { color: green; }
+    56% { color: blue; }
+    70% { color: indigo; }
+    84% { color: violet; }
+    100% { color: red; }
+  }
+  @keyframes shake {
+    0% { transform: translateX(-50%) rotate(0deg); }
+    25% { transform: translateX(-50%) rotate(5deg); }
+    50% { transform: translateX(-50%) rotate(0eg); }
+    75% { transform: translateX(-50%) rotate(-5deg); }
+    100% { transform: translateX(-50%) rotate(0deg); }
+  }
+  @keyframes superShake {
+    0% { transform: translateX(-52%) rotate(-2deg); }
+    25% { transform: translateX(-48%) rotate(2deg); }
+    50% { transform: translateX(-52%) rotate(-2deg); }
+    75% { transform: translateX(-48%) rotate(2deg); }
+    100% { transform: translateX(-50%) rotate(0deg); }
+  }
+  #cow-thoughts {
+    position: absolute;
+    color: #4af;
+    font-style: italic;
+    font-size: 14px;
+    text-align: center;
+    width: 100%;
+    bottom: 180px;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+  #cow {
+    width: 187.84px; /* Adjust this value based on the widest cow design */
+    height: 80px; /* Adjust this value based on the tallest cow design */
+}
+</style>
+</head>
+<body>
+<div id="terminal">
+  <div id="output-container">
+    <div class="prompt">Welcome to the Interactive Cow Simulator!
+Type 'help' for a list of available commands.
+Type '/start' to begin interacting with the cow.</div>
+    <div id="cow-container">
+      <div id="cow" class="ascii-art">
+         ^__^
+         (oo)\\_______
+       || || || || || ||
+       ==================
+       || || || || || ||
+
+      </div>
+      <div id="cow-thoughts"></div>
+    </div>
+  </div>
+  <div id="input-line">
+    <span id="prompt">user@cowsim:~$</span>
+    <input type="text" id="command-input" autofocus>
+  </div>
+</div>
+
+<script>
+const terminal = document.getElementById('terminal');
+const outputContainer = document.getElementById('output-container');
+const commandInput = document.getElementById('command-input');
+const cowContainer = document.getElementById('cow-container');
+const cow = document.getElementById('cow');
+const cowThoughts = document.getElementById('cow-thoughts');
+
+let cowHealth = 100;
+let cowHappiness = 50;
+let cowHunger = 0;
+let inCowMode = false;
+let secretModeActivated = false;
+let tapCount = 0;
+let isWandering = false;
+
+const cowDesigns = [
+`     ^__^
+     (oo)\\_______
+     (__)\\       )\\/
+         ||----w |
+         ||     ||`,
+
+`     ^__^
+     (@@)\\_______
+     (__)\\       )\\/
+         ||----w |
+         ||     ||`,
+
+`     ^__^
+     (OO)\\_______
+     (__)\\       )\\/
+         ||----w |
+         ||     ||`,
+
+`     ^__^
+     (--)\\_______
+     (__)\\       )\\/
+         ||----w |
+         ||     ||`,
+
+`     🧢^
+     (^^)\\_______
+     (__)\\       )\\/
+         ||----w |
+         ||     ||`
+];
+
+const hints = [
+  "Have you tried the 'supercow' command?",
+  "Try petting me more often!",
+  "I love to dance! Do you?",
+  "Moo-ve it or lose it!",
+  "I heard there's a secret rainbow mode...",
+  "Keep tapping me, I might surprise you!",
+  "Clean cows are happy cows!",
+  "The rain is getting bigger...",
+  "I wonder what would happen if you made me super happy..."
+];
+
+function updatePrompt() {
+  document.getElementById('prompt').textContent = inCowMode ? 'cow>' : 'user@cowsim:~$';
+}
+
+function addOutput(text, className = 'output') {
+  const output = document.createElement('div');
+  output.className = className;
+  output.textContent = text;
+  outputContainer.appendChild(output);
+  outputContainer.scrollTop = outputContainer.scrollHeight;
+  
+  // Auto-clear history after 20 rows
+  const outputs = outputContainer.querySelectorAll('.output');
+  if (outputs.length > 20) {
+    for (let i = 0; i < outputs.length - 20; i++) {
+      outputContainer.removeChild(outputs[i]);
+    }
+  }
+}
+
+function executeCommand(command) {
+  if (inCowMode) {
+    executeCowCommand(command);
+    return;
+  }
+
+  const parts = command.trim().split(' ');
+  const cmd = parts[0].toLowerCase();
+  const args = parts.slice(1);
+
+  switch (cmd) {
+    case 'help':
+      addOutput('Available commands:\nhelp - Show this help message\nclear - Clear the terminal screen\n/start - Start interacting with the cow');
+      break;
+    case 'clear':
+      clearTerminal();
+      break;
+    case '/start':
+      startCowMode();
+      shake(cow);
+      break;
+    default:
+      addOutput(`${cmd}: command not found`);
+  }
+}
+
+function clearTerminal() {
+  while (outputContainer.firstChild) {
+    outputContainer.removeChild(outputContainer.firstChild);
+  }
+  outputContainer.appendChild(cowContainer);
+}
+
+function startCowMode() {
+  inCowMode = true;
+  updatePrompt();
+  addOutput('Welcome to my backyard!');
+  addOutput('Commands: feed, pet, clean, status, dance, moo, quit');
+  addOutput('Hint: There might be a hidden command...');
+  addOutput('You can also tap the cow to see what happens!');
+  displayStatus();
+  startRain();
+  startHints();
+  changeCowDesign();
+}
+
+function executeCowCommand(command) {
+  switch (command.toLowerCase()) {
+    case 'feed':
+      cowHunger = Math.max(0, cowHunger - 20);
+      cowHappiness += 5;
+      addOutput('You feed the cow. It looks satisfied!');
+      moveCow('right');
+      break;
+    case 'pet':
+      cowHappiness += 10;
+      addOutput('You pet the cow. It seems to enjoy it!');
+      moveCow('up');
+      break;
+    case 'clean':
+      cowHealth += 5;
+      addOutput('You clean the cow. It looks refreshed!');
+      moveCow('left');
+      break;
+    case 'status':
+      displayStatus();
+      break;
+    case 'dance':
+      cowHappiness += 15;
+      cowHunger += 5;
+      addOutput('The cow dances happily!');
+      danceCow();
+      break;
+    case 'moo':
+      addOutput('The cow says: MOOOOOOOOO!');
+      shake(cow);
+      break;
+    case 'quit':
+      inCowMode = false;
+      updatePrompt();
+      addOutput('You stop interacting with the cow. Goodbye!');
+      stopRain();
+      stopHints();
+      return;
+    case 'supercow':
+      activateSecretMode();
+      break;
+    case 'chipotle':
+      activateSecretMode();
+      addOutput('How did you know?');
+      break;
+    default:
+      addOutput('Invalid command. Use feed, pet, clean, status, dance, moo, or quit.');
+      return;
+  }
+
+  updateCowState();
+  if (!inCowMode) return;
+  displayStatus();
+}
+
+function activateSecretMode() {
+  if (secretModeActivated) {
+    addOutput('The cow is DANCING!!');
+    return;
+  }
+  secretModeActivated = true;
+  addOutput('🌈 SECRET MODE ACTIVATED! 🌈');
+  addOutput('The cow has gained superpowers!');
+  cow.style.animation = 'rainbow 5s linear infinite, superShake 0.5s infinite';
+  cowHealth = 200;
+  cowHappiness = 100;
+  cowHunger = 0;
+  displayStatus();
+  updateRainColor();
+  giveHint();
+}
+
+function updateCowState() {
+  if (!secretModeActivated) {
+    cowHunger = Math.min(100, cowHunger + 2);
+    cowHealth = Math.max(0, Math.min(100, cowHealth - 1 + (cowHunger < 50 ? 1 : 0)));
+    cowHappiness = Math.max(0, Math.min(100, cowHappiness - 1));
+  }
+
+  if (cowHealth <= 0) {
+    addOutput('Oh no! The cow has fallen ill. Game over!');
+    inCowMode = false;
+    updatePrompt();
+    stopRain();
+    stopHints();
+  }
+}
+
+function displayStatus() {
+  addOutput(`Cow Health: ${cowHealth} | Happiness: ${cowHappiness} | Hunger: ${cowHunger}`);
+}
+
+function moveCow(direction) {
+  const directions = {
+    'left': 'translateX(-60%)',
+    'right': 'translateX(-40%)',
+    'up': 'translateX(-50%) translateY(-20px)',
+  };
+  cow.style.transform = directions[direction];
+  setTimeout(() => {
+    cow.style.transform = 'translateX(-50%)';
+  }, 500);
+}
+
+function danceCow() {
+  let danceCount = 0;
+  const danceInterval = setInterval(() => {
+    moveCow(['left', 'right', 'up'][danceCount % 3]);
+    danceCount++;
+    if (danceCount >= 6) {
+      clearInterval(danceInterval);
+    }
+  }, 250);
+}
+
+function shake(element) {
+  if (!secretModeActivated) {
+    element.style.animation = 'shake 0.5s';
+    setTimeout(() => {
+      element.style.animation = '';
+    }, 500);
+  }
+}
+
+function startRain() {
+  const raindrops = '.oO';
+  function createRaindrop() {
+    const raindrop = document.createElement('div');
+    raindrop.className = 'raindrop';
+    raindrop.style.left = `${Math.random() * 100}%`;
+    raindrop.style.animationDuration = `${Math.random() * 1 + 0.5}s`;
+    raindrop.textContent = raindrops[Math.floor(Math.random() * raindrops.length)];
+    cowContainer.appendChild(raindrop);
+
+    raindrop.addEventListener('animationend', () => {
+      cowContainer.removeChild(raindrop);
+    });
+  }
+
+  window.rainInterval = setInterval(createRaindrop, 100);
+}
+
+function stopRain() {
+  clearInterval(window.rainInterval);
+  const raindrops = cowContainer.querySelectorAll('.raindrop');
+  raindrops.forEach(drop => cowContainer.removeChild(drop));
+}
+
+function updateRainColor() {
+  const style = document.createElement('style');
+  if (secretModeActivated) {
+    style.textContent = `
+      .raindrop {
+        color: gold !important;
+      }
+      .raindrop:nth-child(even) {
+        color: darkgoldenrod !important;
+      }
+    `;
+  } else {
+    style.textContent = `
+      .raindrop {
+        color: #4af !important;
+      }
+    `;
+  }
+  document.head.appendChild(style);
+}
+
+function changeCowDesign() {
+  const designIndex = Math.floor(tapCount / 3) % cowDesigns.length;
+  cow.textContent = cowDesigns[designIndex];
+}
+
+cow.addEventListener('click', () => {
+  if (!inCowMode) return;
+  
+  tapCount++;
+  addOutput(`You tapped the cow! Tap count: ${tapCount}`);
+  changeCowDesign();
+  
+  if (tapCount % 10 === 0) {
+    addOutput('The cow seems to really enjoy the attention!');
+    cowHappiness = Math.min(100, cowHappiness + 5);
+  }
+
+  if (tapCount > 100) {
+    cowHappiness = Math.min(100, cowHappiness + 5);
+    activateSecretMode();
+  }
+  shake(cow);
+  displayStatus();
+});
+
+function startHints() {
+  giveHint(); // Give the first hint immediately
+  window.hintInterval = setInterval(giveHint, 15000); // Then every 15 seconds
+  if (secretModeActivated) {
+    window.hintInterval = setInterval(giveHint, 1000);
+  }
+}
+
+function stopHints() {
+  clearInterval(window.hintInterval);
+  cowThoughts.style.opacity = 0;
+}
+
+function giveHint() {
+  var randomHint = hints[Math.floor(Math.random() * hints.length)];
+  if (secretModeActivated){
+    randomHint = "Follow @yif3ngsun on instagram!"
+  }
+  showCowThoughts(randomHint);
+}
+
+function showCowThoughts(text) {
+  cowThoughts.textContent = `${text}`;
+  cowThoughts.style.opacity = 1;
+
+  setTimeout(() => {
+    cowThoughts.style.opacity = 0;
+  }, 5000);
+}
+
+commandInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    const command = commandInput.value;
+    addOutput(`${document.getElementById('prompt').textContent} ${command}`);
+    executeCommand(command);
+    commandInput.value = '';
+  }
+});
+
+updatePrompt();
+</script>
+</body>
+</html>
