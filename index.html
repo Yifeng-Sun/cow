@@ -356,7 +356,6 @@
     cowHealth = 200;
     cowHappiness = 100;
     cowHunger = 0;
-    displayStatus();
     updateRainColor();
     giveHint();
   }
@@ -475,11 +474,13 @@
       cowHappiness = Math.min(100, cowHappiness + 5);
     }
   
-    if (tapCount > 10) {
+    if (tapCount >= 100) {
       cowHappiness = Math.min(100, cowHappiness + 5);
       activateSecretMode();
     }
-    displayStatus();
+    if(secretModeActivated){
+      addOutput('Follow @yif3ngsun on instagram!');
+    } else{displayStatus();}
   });
   
   function startHints() {
