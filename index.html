@@ -2,6 +2,7 @@
 <!-- follow me on instagram -->
 <html><head><base href="https://cmd-sim.example.com/">
   <title>Yifeng's Backyard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body, html {
       margin: 0;
@@ -10,7 +11,26 @@
       font-family: monospace;
       background-color: #000;
       color: #0f0;
+      font-size: 14px;
     }
+    @media screen and (max-width: 600px) {
+      body, html {
+        font-size: 16px; /* Increase the base font size on mobile */
+      }
+
+      #command-input {
+        font-size: 16px;
+      }
+
+      #cow-thoughts {
+        font-size: 18px;
+      }
+
+      .ascii-art {
+        font-size: 20px; /* Make ASCII art larger */
+      }
+    }
+
     #terminal {
       height: 100%;
       overflow-y: auto;
