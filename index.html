@@ -233,8 +233,8 @@
     
     // Auto-clear history after 20 rows
     const outputs = outputContainer.querySelectorAll('.output');
-    if (outputs.length > 20) {
-      for (let i = 0; i < outputs.length - 20; i++) {
+    if (outputs.length > 5) {
+      for (let i = 0; i < outputs.length - 5; i++) {
         outputContainer.removeChild(outputs[i]);
       }
     }
